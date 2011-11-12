@@ -21,8 +21,9 @@
 #define TAG_OTORGADO          30    /* srv -> cli */
 #define TAG_LIBERO            40    /* cli -> srv */
 #define TAG_TERMINE           50    /* cli -> srv */
-#define TAG_MESSAGE           60    /* srv -> srv */
-#define TAG_REPLY             70    /* srv -> srv */
+#define TAG_PEDIDO_S          60    /* srv -> srv */
+#define TAG_OTORGADO_S        70    /* srv -> srv */
+#define TAG_TERMINE_S         80    /* src -> srv */
 
 /* Abreviaciones de constantes MPI que usaremos seguido */
 
