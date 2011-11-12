@@ -13,12 +13,14 @@ void servidor(int mi_cliente)
     int hay_pedido_local = FALSE;
     int listo_para_salir = FALSE;
     int sequence_number = 1;
-    // fprintf(stderr, "mi_rank: %d\n", mi_rank);
-    // fprintf(stderr, "cant_ranks: %d\n", cant_ranks);
+    int replys = 0;
+    int cant_otros_srvs = cant_ranks / 2 - 1;
+    int recv_sequence_number;
+    // queue<int> deferred_replys; hacer esto en C :P
 
     while( ! listo_para_salir ) {
 
-        MPI_Recv(NULL, 0, MPI_INT, ANY_SOURCE, ANY_TAG, COMM_WORLD, &status);
+        MPI_Recv(&recv_sequence_number, 1, MPI_INT, ANY_SOURCE, ANY_TAG, COMM_WORLD, &status);
         origen = status.MPI_SOURCE;
         tag = status.MPI_TAG;
 
@@ -34,6 +36,7 @@ void servidor(int mi_cliente)
               if(rank != mi_rank)
                 MPI_Send(&sequence_number, 1, MPI_INT, rank, TAG_MESSAGE, COMM_WORLD);
             }
+            sequence_number++;
 
             break;
 
@@ -52,13 +55,18 @@ void servidor(int mi_cliente)
 
           case TAG_MESSAGE:
             assert(origen % 2 == 0); // Es de otro srv.
+            if(recv_sequence_number >= sequence_number)
+              sequence_number = recv_sequence_number + 1;
             break;
 
           case TAG_REPLY:
             assert(origen % 2 == 0); // Es de otro srv.
-            // Aviso a mi cliente que le mande cumbia.
-            debug("Dándole permiso (frutesco por ahora)");
-            // MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+            replys++;
+            if(replys == cant_otros_srvs){
+              debug("Dándole permiso (frutesco por ahora)");
+              // Aviso a mi cliente que le mande cumbia.
+              // MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+            }
             break;
 
           default:
