@@ -1,4 +1,5 @@
 #include "srv.h"
+#include <stdio.h>
 
 /*
  *  Ejemplo de servidor que tiene el "sí fácil" para con su
@@ -12,6 +13,8 @@ void servidor(int mi_cliente)
     int hay_pedido_local = FALSE;
     int listo_para_salir = FALSE;
     int sequence_number = 1;
+    // fprintf(stderr, "mi_rank: %d\n", mi_rank);
+    // fprintf(stderr, "cant_ranks: %d\n", cant_ranks);
 
     while( ! listo_para_salir ) {
 
