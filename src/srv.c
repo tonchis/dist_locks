@@ -25,8 +25,13 @@ void servidor(int mi_cliente)
             debug("Mi cliente solicita acceso exclusivo");
             assert(hay_pedido_local == FALSE);
             hay_pedido_local = TRUE;
-            debug("Dándole permiso (frutesco por ahora)");
-            MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
+
+            int rank;
+            for(rank = 0; rank < cant_ranks, rank += 2){
+              if(rank != mi_rank)
+                MPI_Send(&sequence_number, 1, MPI_INT, rank, TAG_MESSAGE, COMM_WORLD);
+            }
+
             break;
 
           case TAG_LIBERO:
@@ -43,9 +48,14 @@ void servidor(int mi_cliente)
             break;
 
           case TAG_MESSAGE:
+            assert(origen % 2 == 0); // Es de otro srv.
             break;
 
           case TAG_REPLY:
+            assert(origen % 2 == 0); // Es de otro srv.
+            // Aviso a mi cliente que le mande cumbia.
+            debug("Dándole permiso (frutesco por ahora)");
+            // MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
             break;
 
           default:
