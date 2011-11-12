@@ -36,7 +36,7 @@ void cliente(int mi_serv_rank, t_params params)
     double mseg_por_op = (double) params.mseg_seccion_critica / cant_ops;
 
     debug_params(&params);
-    
+
     while(params.cant_iteraciones-- > 0) {
 
         debug("\tComputando de todo un poco ...");
@@ -53,7 +53,7 @@ void cliente(int mi_serv_rank, t_params params)
 
             /* `Ejecutamos' una instrucción crítica. */
             fprintf(stderr, "%c", mi_char);
-            
+
             /* Si fue la última mandamos un \n a stderr. */
             if(cant_ops == i + 1) {
                 fprintf(stderr, "\n");
@@ -68,7 +68,7 @@ void cliente(int mi_serv_rank, t_params params)
 
             computar(mseg_por_op);
         }
-        
+
         //debug("\tSaliendo de sección crítica");
         MPI_Send(NULL, 0, MPI_INT, mi_serv_rank, TAG_LIBERO, COMM_WORLD);
     }
@@ -96,7 +96,7 @@ t_params parsear_primeros_args(char **argv)
 
 /* Texto que mostramos ante -h y/o cantidad inválida de args. */
 
-char ayuda[] = 
+char ayuda[] =
 "uso:\n\n"
 "  mpiexec -np <#ranks> ./tp3 [<char> <#iters> <ms_prev> <ms_crit>] [...]\n\n"
 "ej.:\n\n"
@@ -129,9 +129,9 @@ void parsear_y_repartir_parametros(int argc, char *argv[], int cant_clis)
 {
     int nro_cli;
     t_params pbase;
-    
+
     assert(mi_rank == RANK_CERO);
-    
+
     pbase.caracter = CHAR_INICIAL;
     pbase.cant_iteraciones = CANT_ITERACIONES;
     pbase.mseg_computo_previo = MSEG_COMPUTO_PREVIO;
@@ -175,13 +175,13 @@ t_params recibir_parametros(void)
 {
     MPI_Status status;
     t_params params;
-    
+
     assert(mi_rol == ROL_CLIENTE);
-    
+
     MPI_Recv(&params, 4, MPI_INT, RANK_CERO, TAG_INICIAL, COMM_WORLD, &status);
     mi_char = params.caracter;
     debug("\t¡Buenas! Recibí mensaje inicial con parámetros");
-    
+
     return params;
 }
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
     mi_char = ' ';
 
     if(mi_rol == ROL_SERVIDOR) {
-    
+
         if(mi_rank == RANK_CERO) {
             /* MPI sólo garantiza argc/argv en el proceso con menor rank. */
             parsear_y_repartir_parametros(argc, argv, cant_ranks / 2);
