@@ -11,8 +11,8 @@ void servidor(int mi_cliente) {
     int listo_para_salir = FALSE;
     int sequence_number = 1;
     int cant_otros_srvs = cant_ranks / 2 - 1;
-    lista_t deferred_replies;
-    lista_t servers;
+    lista_t deferred_replies = {NULL};
+    lista_t servers = {NULL};
     nodo_t *reply, *server;
     
     for(rank = 0; rank < cant_ranks; rank+= 2) {
@@ -37,7 +37,7 @@ void servidor(int mi_cliente) {
             hay_pedido_local = TRUE;
             replies = 0;
 
-            if(cant_ranks > 2) {
+            if(servers.primero != NULL) {
               debug("Solicito acceso exclusivo a los demas servers");
               used_sequence_number = sequence_number;
               
