@@ -3,6 +3,14 @@
 #include <stdlib.h>
 #include <assert.h>
 
+lista_t* nuevaLista()
+{
+    lista_t* lista = malloc(sizeof(lista_t));
+    lista->primero = NULL;
+    lista->longitud = 0;
+    return lista;
+}
+
 void agregarALaLista(int elemento, lista_t* lista) {
   nodo_t* nodo = malloc(sizeof(nodo_t));
   nodo->elemento = elemento;
@@ -13,6 +21,7 @@ void agregarALaLista(int elemento, lista_t* lista) {
     nodo->siguiente = NULL;
     
   lista->primero = nodo;
+  lista->longitud++;
 }
 
 void sacarDeLaLista(int elemento, lista_t* lista) {
@@ -34,6 +43,8 @@ void sacarDeLaLista(int elemento, lista_t* lista) {
 
   nodo->siguiente = NULL;
   free(nodo);
+  
+  lista->longitud--;
 }
 
 void vaciarLaLista(lista_t* lista) {
@@ -47,4 +58,5 @@ void vaciarLaLista(lista_t* lista) {
   }
   
   lista->primero = NULL;
+  lista->longitud = 0;
 }

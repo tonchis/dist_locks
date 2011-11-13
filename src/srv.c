@@ -10,14 +10,13 @@ void servidor(int mi_cliente) {
     int en_zona_critica = FALSE;
     int listo_para_salir = FALSE;
     int sequence_number = 1;
-    int cant_otros_srvs = cant_ranks / 2 - 1;
-    lista_t deferred_replies = {NULL};
-    lista_t servers = {NULL};
+    lista_t* deferred_replies = nuevaLista();
+    lista_t* servers = nuevaLista();
     nodo_t *reply, *server;
     
     for(rank = 0; rank < cant_ranks; rank+= 2) {
       if(rank != mi_rank)
-        agregarALaLista(rank, &servers);
+        agregarALaLista(rank, servers);
     }
 
     while( ! listo_para_salir ) {
@@ -37,11 +36,11 @@ void servidor(int mi_cliente) {
             hay_pedido_local = TRUE;
             replies = 0;
 
-            if(servers.primero != NULL) {
+            if(servers->primero != NULL) {
               debug("Solicito acceso exclusivo a los demas servers");
               used_sequence_number = sequence_number;
               
-              server = servers.primero;
+              server = servers->primero;
               
               while(server != NULL) {
                 MPI_Send(&used_sequence_number, 1, MPI_INT, server->elemento, TAG_PEDIDO_S, COMM_WORLD);
@@ -67,7 +66,7 @@ void servidor(int mi_cliente) {
             hay_pedido_local = FALSE;
             en_zona_critica = FALSE;
             
-            reply = deferred_replies.primero;
+            reply = deferred_replies->primero;
             
             while(reply != NULL) {
               debug("Dándole permiso a un servidor");
@@ -75,14 +74,14 @@ void servidor(int mi_cliente) {
               reply = reply->siguiente;
             }
           
-            vaciarLaLista(&deferred_replies);
+            vaciarLaLista(deferred_replies);
             break;
 
           case TAG_TERMINE:
             assert(origen == mi_cliente);
             debug("Mi cliente avisa que terminó");
             
-            server = servers.primero;
+            server = servers->primero;
             
             while(server != NULL) {
               if(server->elemento != mi_rank)
@@ -107,14 +106,14 @@ void servidor(int mi_cliente) {
             } else {
               if(en_zona_critica) {
                 debug("Dejo a un servidor en espera");
-                agregarALaLista(origen, &deferred_replies);
+                agregarALaLista(origen, deferred_replies);
               } else {
                 if(recv_sequence_number < used_sequence_number || (recv_sequence_number == used_sequence_number && origen < mi_rank)) {
                   debug("Dándole permiso a un servidor");
                   MPI_Send(NULL, 0, MPI_INT, origen, TAG_OTORGADO_S, COMM_WORLD);
                 } else {
                   debug("Dejo a un servidor en espera");
-                  agregarALaLista(origen, &deferred_replies);
+                  agregarALaLista(origen, deferred_replies);
                 }
               }
             }
@@ -128,9 +127,9 @@ void servidor(int mi_cliente) {
             assert(en_zona_critica == FALSE);
             
             replies++;
-            assert(replies <= cant_otros_srvs); //espero no tener replies de mas
+            assert(replies <= servers->longitud); //espero no tener replies de mas
             
-            if(replies == cant_otros_srvs) {
+            if(replies == servers->longitud) {
               debug("Dándole permiso a mi cliente");
               en_zona_critica = TRUE;
               MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
@@ -140,7 +139,7 @@ void servidor(int mi_cliente) {
             
           case TAG_TERMINE_S:
             debug("Un servidor avisa que terminó");
-            sacarDeLaLista(origen, &servers);
+            sacarDeLaLista(origen, servers);
             break;
 
           default:
@@ -148,5 +147,8 @@ void servidor(int mi_cliente) {
             break;
         }
     }
+    
+    free(deferred_replies);
+    free(servers);
 }
 
