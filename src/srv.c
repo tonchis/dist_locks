@@ -3,9 +3,16 @@
 
 #include <stdio.h>
 
+char debug_buffer[1024];
+
+void debugConValorEntero(char* str, int i) {
+  sprintf(debug_buffer, str, i);
+  debug(debug_buffer);
+}
+
 void servidor(int mi_cliente) {
     MPI_Status status;
-    int origen, tag, recv_sequence_number, replies, rank, used_sequence_number;
+    int origen, tag, recv_sequence_number, replies, rank, used_sequence_number, used_servers;
     int hay_pedido_local = FALSE;
     int en_zona_critica = FALSE;
     int listo_para_salir = FALSE;
@@ -34,11 +41,13 @@ void servidor(int mi_cliente) {
             assert(en_zona_critica == FALSE);
             
             hay_pedido_local = TRUE;
-            replies = 0;
 
             if(servers->primero != NULL) {
-              debug("Solicito acceso exclusivo a los demas servers");
+              replies = 0;
               used_sequence_number = sequence_number;
+              used_servers = servers->longitud;
+              
+              debugConValorEntero("Solicito acceso exclusivo a los demas servers (sequence number %d)", used_sequence_number);
               
               server = servers->primero;
               
@@ -69,7 +78,7 @@ void servidor(int mi_cliente) {
             reply = deferred_replies->primero;
             
             while(reply != NULL) {
-              debug("Dándole permiso a un servidor");
+              debugConValorEntero("Dándole permiso a un servidor (rk%d)", reply->elemento);
               MPI_Send(NULL, 0, MPI_INT, reply->elemento, TAG_OTORGADO_S, COMM_WORLD);
               reply = reply->siguiente;
             }
@@ -94,25 +103,25 @@ void servidor(int mi_cliente) {
             break;
 
           case TAG_PEDIDO_S:
-            debug("Un servidor me pide permiso");
+            debugConValorEntero("Un servidor me pide permiso (rk%d)", origen);
             assert(origen % 2 == 0); // Es de otro srv.
             
             if(recv_sequence_number >= sequence_number)
               sequence_number = recv_sequence_number + 1;
               
             if(!hay_pedido_local) {
-              debug("Dándole permiso a un servidor");
+              debugConValorEntero("Dándole permiso a un servidor (rk%d)", origen);
               MPI_Send(NULL, 0, MPI_INT, origen, TAG_OTORGADO_S, COMM_WORLD);
             } else {
               if(en_zona_critica) {
-                debug("Dejo a un servidor en espera");
+                debugConValorEntero("Dejo a un servidor en espera (rk%d)", origen);
                 agregarALaLista(origen, deferred_replies);
               } else {
                 if(recv_sequence_number < used_sequence_number || (recv_sequence_number == used_sequence_number && origen < mi_rank)) {
-                  debug("Dándole permiso a un servidor");
+                  debugConValorEntero("Dándole permiso a un servidor (rk%d)", origen);
                   MPI_Send(NULL, 0, MPI_INT, origen, TAG_OTORGADO_S, COMM_WORLD);
                 } else {
-                  debug("Dejo a un servidor en espera");
+                  debugConValorEntero("Dejo a un servidor en espera (rk%d)", origen);
                   agregarALaLista(origen, deferred_replies);
                 }
               }
@@ -121,15 +130,15 @@ void servidor(int mi_cliente) {
             break;
 
           case TAG_OTORGADO_S:
-            debug("Un servidor me da permiso");
+            debugConValorEntero("Un servidor me da permiso (rk%d)", origen);
             assert(origen % 2 == 0); // Es de otro srv.
             assert(hay_pedido_local == TRUE);
             assert(en_zona_critica == FALSE);
             
             replies++;
-            assert(replies <= servers->longitud); //espero no tener replies de mas
+            assert(replies <= used_servers); //espero no tener replies de mas
             
-            if(replies == servers->longitud) {
+            if(replies == used_servers) {
               debug("Dándole permiso a mi cliente");
               en_zona_critica = TRUE;
               MPI_Send(NULL, 0, MPI_INT, mi_cliente, TAG_OTORGADO, COMM_WORLD);
@@ -138,7 +147,7 @@ void servidor(int mi_cliente) {
             break;
             
           case TAG_TERMINE_S:
-            debug("Un servidor avisa que terminó");
+            debugConValorEntero("Un servidor avisa que terminó (rk%d)", origen);
             sacarDeLaLista(origen, servers);
             break;
 
